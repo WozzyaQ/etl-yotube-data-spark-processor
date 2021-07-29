@@ -1,0 +1,1 @@
+spark-submit --class org.ua.wozzya.data.warehouse.formation.VideoCommentsProcessor spark.jar --metastore-path s3n://chaikovskyi-metastore-bucket/video-comments/ --warehouse-path s3n://chaikovskyi-data-warehouse-bucket/video-comments/ --raw-data-path s3n://chaikovskyi-data-lake-bucket/channel-comments/*/*

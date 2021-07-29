@@ -1,0 +1,1 @@
+spark-submit --class org.ua.wozzya.data.warehouse.formation.ChannelVideoProcessor spark.jar --metastore-path s3n://chaikovskyi-metastore-bucket/channel-videos/ --warehouse-path s3n://chaikovskyi-data-warehouse-bucket/channel-videos/ --raw-data-path s3n://chaikovskyi-data-lake-bucket/channel-videos/*/*

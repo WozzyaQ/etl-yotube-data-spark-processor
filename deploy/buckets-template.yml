@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Templete for deploying buckets
+Parameters:
+  JarsBucketName:
+    Type: String
+
+  DataLakeBucketName:
+    Type: String
+
+  DataWarehouseBucketName:
+    Type: String
+
+  MetastoreBucketName:
+    Type: String
+
+
+Resources:
+  JarsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "chaikovskyi-jars-bucket"
+
+  DataLakeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "chaikovskyi-data-lake-bucket"
+
+  DataWarehouseBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "chaikovskyi-data-warehouse-bucket"
+
+  MetastoreBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "chaikovskyi-metastore-bucket"

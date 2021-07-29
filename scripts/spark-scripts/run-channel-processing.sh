@@ -1,0 +1,1 @@
+spark-submit --class org.ua.wozzya.data.warehouse.formation.ChannelProcessor spark.jar --metastore-path s3n://chaikovskyi-metastore-bucket/channels/ --warehouse-path s3n://chaikovskyi-data-warehouse-bucket/channels/ --raw-data-path s3n://chaikovskyi-data-lake-bucket/input/channels
