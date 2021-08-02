@@ -4,6 +4,9 @@ ThisBuild / scalaVersion := "2.12.2"
 
 
 lazy val root = (project in file("."))
+  .settings(
+    assembly / assemblyJarName := "root.jar"
+  )
   .aggregate(crawler, sparkProcessor)
 
 
@@ -27,8 +30,8 @@ lazy val crawler = (project in file("crawler"))
     case "module-info.class" => MergeStrategy.discard
     case _ => MergeStrategy.first
   },
-  assembly / assemblyJarName := "crawler.jar",
   assembly / assemblyCacheOutput := false,
+  assembly / assemblyOutputPath := file("./jars/crawler.jar"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 )
 
@@ -39,7 +42,7 @@ lazy val sparkProcessor = (project in file("spark-processor"))
       dependencies.sparkCore,
       dependencies.sparkSql,
     ),
-    assembly / assemblyJarName := "spark.jar"
+    assembly / assemblyOutputPath := file("./jars/spark.jar")
   )
 
 lazy val dependencies = new {
