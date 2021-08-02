@@ -1,0 +1,14 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Deploy') {
+            steps {
+                withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
+                    s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/crawler.jar");
+                    s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/spark.jar");
+                }
+            }
+        }
+    }
+}

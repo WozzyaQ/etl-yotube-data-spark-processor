@@ -6,7 +6,24 @@ pipeline {
           PATH = "${env.SBT_HOME}/bin:${env.PATH}"
     }
 
+    options {
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'BRANCH', defaultValue: '', description: 'Enter a branch name to build.')
+    }
+
     stages {
+        stage('Initialize') {
+            steps {
+                scripts {
+                    print("Parameter BRANCH: ${params.BRANCH}")
+                    git url: https://github.com/WozzyaQ/etl-yotube-data-spark-processor, branch: params.BRANCH
+                }
+
+            }
+        }
 
         stage('Build') {
             steps {
@@ -18,16 +35,15 @@ pipeline {
                 echo 'Testing..'
             }
         }
-        stage('Deploy') {
+        stage('Store') {
             steps {
-                withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
+                 withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
                     s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/crawler.jar");
                     s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/spark.jar");
-                }
+                 }
             }
         }
     }
-
     post {
       always {
         cleanWs()
