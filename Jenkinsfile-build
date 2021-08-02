@@ -1,9 +1,11 @@
+#!/usr/bin/env groovy
+
 pipeline {
     agent any
 
     environment {
-          SBT_HOME = tool name: 'sbt-1.5.4', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'
-          PATH = "${env.SBT_HOME}/bin:${env.PATH}"
+        SBT_HOME = tool name: 'sbt-1.5.4', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'
+        PATH = "${env.SBT_HOME}/bin:${env.PATH}"
     }
 
     options {
@@ -11,8 +13,9 @@ pipeline {
     }
 
     parameters {
-        string(name: 'BRANCH', defaultValue: params.BRANCH ?:'', description: 'Enter name of the branch to be polled')
+        string(name: 'BRANCH', defaultValue: params.BRANCH ?: '', description: 'Enter name of the branch to be polled')
         string(name: 'JENKINS_JARS_BUCKET', defaultValue: params.JENKINS_JARS_BUCKET ?: '', description: 'Enter S3 bucket name where jars will be stored')
+        string(name: 'REGION', defaultValue: params.REGION ?: 'us-east-2', description: 'Enter AWS region name')
     }
 
     stages {
@@ -21,41 +24,52 @@ pipeline {
                 sh 'sbt clean assembly'
             }
         }
+
         stage('Test') {
             steps {
-                echo 'Testing..'
+                sh 'sbt test'
             }
         }
+
         stage('Store') {
             steps {
-                 withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
-                    script{
-                        def sourceCrawlerJar = "./jars/crawler.jar"
-                        def sourceSparkJar = "./jars/spark.jar"
+                withAWS(region: "${REGION}", credentials: 'sigma-aws-creds') {
+                    script {
+                        // copying files to other directories
+                        // because s3 uploads captures folder structure as prefix
+                        // thus we need to maintain predictable structure to work with artifacts later on
+                        def sourceCrawlerJar = "${WORKSPACE}/jars/crawler.jar"
+                        def sourceSparkJar = "${WORKSPACE}/jars/spark.jar"
 
-                        def newCrawlerJar = "./jars/${BRANCH}/${BUILD_ID}/crawler.jar"
-                        def newSparkJar = "./jars/${BRANCH}/${BUILD_ID}/spark.jar"
+                        def newCrawlerJar = "${WORKSPACE}/jars/${BRANCH}/${BUILD_ID}/crawler.jar"
+                        def newSparkJar = "${WORKSPACE}/jars/${BRANCH}/${BUILD_ID}/spark.jar"
+                        
+                        def latestCrawlerJar = "${WORKSPACE}/jars/${BRANCH}/LATEST/crawler.jar"
+                        def latestSparkJar = "${WORKSPACE}/jars/${BRANCH}/LATEST/spark.jar"
 
                         writeFile(file: newCrawlerJar, encoding: "UTF-8", text: readFile(file: sourceCrawlerJar, encoding: "UTF-8"))
                         writeFile(file: newSparkJar, encoding: "UTF-8", text: readFile(file: sourceSparkJar, encoding: "UTF-8"))
+
+                        writeFile(file: latestCrawlerJar, encoding: "UTF-8", text: readFile(file: sourceCrawlerJar, encoding: "UTF-8"))
+                        writeFile(file: latestSparkJar, encoding: "UTF-8", text: readFile(file: sourceSparkJar, encoding: "UTF-8"))
                     }
                     s3Upload(bucket: "${JENKINS_JARS_BUCKET}", includePathPattern: "jars/*/*/*.jar")
-                 }
+                }
             }
         }
     }
     post {
-      always {
-        cleanWs()
-        dir("${env.WORKSPACE}@tmp") {
-          deleteDir()
+        always {
+            cleanWs()
+            dir("${env.WORKSPACE}@tmp") {
+                deleteDir()
+            }
+            dir("${env.WORKSPACE}@script") {
+                deleteDir()
+            }
+            dir("${env.WORKSPACE}@script@tmp") {
+                deleteDir()
+            }
         }
-        dir("${env.WORKSPACE}@script") {
-          deleteDir()
-        }
-        dir("${env.WORKSPACE}@script@tmp") {
-          deleteDir()
-        }
-      }
     }
 }

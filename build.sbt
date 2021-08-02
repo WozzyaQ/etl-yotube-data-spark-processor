@@ -3,6 +3,9 @@ ThisBuild / organization := "org.ua.wozzya"
 ThisBuild / scalaVersion := "2.12.2"
 
 
+ThisBuild / resolvers += Resolver.jcenterRepo
+
+
 lazy val root = (project in file("."))
   .settings(
     assembly / assemblyJarName := "root.jar"
@@ -22,18 +25,24 @@ lazy val crawler = (project in file("crawler"))
       dependencies.orgJson,
       dependencies.lambdaEvents,
       dependencies.lambdaCore,
-      dependencies.s3
+      dependencies.s3,
+      dependencies.junit5,
+      dependencies.s3Mock,
+      dependencies.mockitoInline
     )
   ).settings(
-  assembly / assemblyMergeStrategy := {
-    case PathList("META-INF", xs@_*) => MergeStrategy.discard
-    case "module-info.class" => MergeStrategy.discard
-    case _ => MergeStrategy.first
-  },
-  assembly / assemblyCacheOutput := false,
-  assembly / assemblyOutputPath := file("./jars/crawler.jar"),
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+  libraryDependencies += "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test
 )
+  .settings(
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs@_*) => MergeStrategy.discard
+      case "module-info.class" => MergeStrategy.discard
+      case _ => MergeStrategy.first
+    },
+    assembly / assemblyCacheOutput := false,
+    assembly / assemblyOutputPath := file("./jars/crawler.jar"),
+    javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+  )
 
 lazy val sparkProcessor = (project in file("spark-processor"))
   .settings(
@@ -57,6 +66,8 @@ lazy val dependencies = new {
   private val lambdaCoreVersion = "1.2.0"
   private val lambdaEventsVersion = "3.6.0"
   private val s3Version = "1.12.26"
+  private val s3MockV = "0.2.6"
+  private val mockitoInlineV = "3.8.0"
 
   val googleApiServiceYouTube = "com.google.apis" % "google-api-services-youtube" % apiServicesYouTubeV
   val googleOauthClientJetty = "com.google.oauth-client" % "google-oauth-client" % oauthClientV
@@ -65,11 +76,14 @@ lazy val dependencies = new {
   val commonsCli = "commons-cli" % "commons-cli" % commonsCliV
   val orgJson = "org.json" % "json" % jsonV
 
-
-  val sparkCore = "org.apache.spark" %% "spark-core" % sparkCoreV % "provided"
-  val sparkSql = "org.apache.spark" %% "spark-sql" % sparkSqlV % "provided"
+  val sparkCore = "org.apache.spark" %% "spark-core" % sparkCoreV % Provided
+  val sparkSql = "org.apache.spark" %% "spark-sql" % sparkSqlV % Provided
 
   val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % lambdaCoreVersion
   val lambdaEvents = "com.amazonaws" % "aws-lambda-java-events" % lambdaEventsVersion
   val s3 = "com.amazonaws" % "aws-java-sdk-s3" % s3Version
+
+  val junit5 = "org.junit.jupiter" % "junit-jupiter-engine" % "5.1.0" % Test
+  val s3Mock = "io.findify" %% "s3mock" % s3MockV % Test
+  val mockitoInline = "org.mockito" % "mockito-inline" % mockitoInlineV % Test
 }
