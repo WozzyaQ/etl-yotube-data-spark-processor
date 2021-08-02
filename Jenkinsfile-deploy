@@ -1,12 +1,22 @@
 pipeline {
     agent any
 
+     parameters {
+        string(name: 'BUILD_ID', defaultValue: '')
+        string(name: 'BRANCH', defaultValue: '')
+        string(name: 'FROM_BUCKET', defaultValue: '')
+        string(name: 'TO_BUCKET', defaultValue: '')
+     }
+
     stages {
         stage('Deploy') {
             steps {
                 withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
-                    s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/crawler.jar");
-                    s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/spark.jar");
+                   s3Copy(fromBucket: "${FROM_BUCKET}", fromPath: "jars/${BRANCH}/${BUILD_ID}/spark.jar",
+                        toBucket: "${TO_BUCKET}", toPath: "spark.jar")
+
+                   s3Copy(fromBucket: "${FROM_BUCKET}", fromPath: "jars/${BRANCH}/${BUILD_ID}/crawler.jar",
+                        toBucket: "${TO_BUCKET}", toPath: "crawler.jar")
                 }
             }
         }

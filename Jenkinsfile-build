@@ -11,20 +11,11 @@ pipeline {
     }
 
     parameters {
-        string(name: 'BRANCH', defaultValue: '', description: 'Enter a branch name to build.')
+        string(name: 'BRANCH', defaultValue: params.BRANCH ?:'', description: 'Enter name of the branch to be polled')
+        string(name: 'JENKINS_JARS_BUCKET', defaultValue: params.JENKINS_JARS_BUCKET ?: '', description: 'Enter S3 bucket name where jars will be stored')
     }
 
     stages {
-        stage('Initialize') {
-            steps {
-                scripts {
-                    print("Parameter BRANCH: ${params.BRANCH}")
-                    git url: https://github.com/WozzyaQ/etl-yotube-data-spark-processor, branch: params.BRANCH
-                }
-
-            }
-        }
-
         stage('Build') {
             steps {
                 sh 'sbt clean assembly'
@@ -38,8 +29,17 @@ pipeline {
         stage('Store') {
             steps {
                  withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
-                    s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/crawler.jar");
-                    s3Upload(bucket: "chaikovskyi-jars-bucket", file: "./jars/spark.jar");
+                    script{
+                        def sourceCrawlerJar = "./jars/crawler.jar"
+                        def sourceSparkJar = "./jars/spark.jar"
+
+                        def newCrawlerJar = "./jars/${BRANCH}/${BUILD_ID}/crawler.jar"
+                        def newSparkJar = "./jars/${BRANCH}/${BUILD_ID}/spark.jar"
+
+                        writeFile(file: newCrawlerJar, encoding: "UTF-8", text: readFile(file: sourceCrawlerJar, encoding: "UTF-8"))
+                        writeFile(file: newSparkJar, encoding: "UTF-8", text: readFile(file: sourceSparkJar, encoding: "UTF-8"))
+                    }
+                    s3Upload(bucket: "${JENKINS_JARS_BUCKET}", includePathPattern: "jars/*/*/*.jar")
                  }
             }
         }
