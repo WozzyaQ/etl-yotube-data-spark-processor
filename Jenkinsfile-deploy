@@ -1,22 +1,25 @@
+#!/usr/bin/env groovy
+
 pipeline {
     agent any
 
-     parameters {
-        string(name: 'BUILD_ID', defaultValue: '')
+    parameters {
+        string(name: 'BUILD_ID', defaultValue: 'LATEST')
         string(name: 'BRANCH', defaultValue: '')
         string(name: 'FROM_BUCKET', defaultValue: '')
         string(name: 'TO_BUCKET', defaultValue: '')
-     }
+        string(name: 'REGION', defaultValue: '')
+    }
 
     stages {
         stage('Deploy') {
             steps {
-                withAWS(region: 'us-east-2',credentials: 'sigma-aws-creds') {
-                   s3Copy(fromBucket: "${FROM_BUCKET}", fromPath: "jars/${BRANCH}/${BUILD_ID}/spark.jar",
-                        toBucket: "${TO_BUCKET}", toPath: "spark.jar")
+                withAWS(region: "${REGION}", credentials: 'sigma-aws-creds') {
+                    s3Copy(fromBucket: "${FROM_BUCKET}", fromPath: "${WORKSPACE}/jars/${BRANCH}/${BUILD_ID}/spark.jar",
+                            toBucket: "${TO_BUCKET}", toPath: "spark.jar")
 
-                   s3Copy(fromBucket: "${FROM_BUCKET}", fromPath: "jars/${BRANCH}/${BUILD_ID}/crawler.jar",
-                        toBucket: "${TO_BUCKET}", toPath: "crawler.jar")
+                    s3Copy(fromBucket: "${FROM_BUCKET}", fromPath: "${WORKSPACE}/jars/${BRANCH}/${BUILD_ID}/crawler.jar",
+                            toBucket: "${TO_BUCKET}", toPath: "crawler.jar")
                 }
             }
         }
